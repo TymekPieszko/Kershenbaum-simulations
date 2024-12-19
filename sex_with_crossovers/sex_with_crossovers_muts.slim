@@ -1,0 +1,69 @@
+// The model
+initialize()
+{
+	initializeSLiMModelType("nonWF");
+	initializeTreeSeq();
+	initializeMutationType("m1", 0.2, "g", S_MEAN, S_SHAPE);		
+	m1.convertToSubstitution = T;
+	initializeGenomicElementType("g1", m1, 1.0);
+	initializeGenomicElement(g1, 0, L-1);
+	initializeMutationRate(MUT_RATE);
+	initializeRecombinationRate(CO_RATE);
+}
+
+// Individuals produce offspring according to fitness
+reproduction()
+{
+	K = sim.getValue("N");
+	fitness = p1.cachedFitness(NULL);
+	inds1 = sample(p1.individuals, N, replace=T, weights=fitness);
+	inds2 = sample(p1.individuals, N, replace=T, weights=fitness);
+
+	for (i in seqLen(K))
+	{
+		p1.addCrossed(inds1[i], inds2[i]);
+	}
+	self.active = 0;
+}
+
+1 early()
+{
+	sim.setValue("N", N);
+	sim.addSubpop("p1", 1);
+}
+
+1 late() {
+	deleteFile(FITNESS_FILE);
+}
+
+late() {
+	if (community.tick % 1000 == 0) {
+		fit_mean = mean(p1.cachedFitness(NULL));
+		writeFile(FITNESS_FILE, paste(fit_mean), append=T);
+	}
+}
+
+survival()
+{
+	// survival is independent of fitness; parents die, offspring live
+	return (individual.age == 0);
+}
+
+GENS late() {
+	// WRITE THE GENOTYPE FILE
+	deleteFile(GENOTYPE_FILE);
+	for (mut in sim.mutations[sim.mutationCounts(NULL, sim.mutations)>3]) {
+		altHomCount = 0;
+		for (ind in sim.subpopulations.individuals) {
+			if (sum(c(ind.genome1.containsMutations(mut), ind.genome2.containsMutations(mut)))==2) {
+				altHomCount = altHomCount + 1;			
+			}
+		}
+		altHomProp = altHomCount / (sim.mutationCounts(NULL, mut) - altHomCount); 
+		writeFile(GENOTYPE_FILE, paste(c(mut.selectionCoeff, altHomProp), sep="\t"), append=T);
+	}
+
+
+	// WRITE THE TREE SEQUENCE
+	sim.treeSeqOutput(TS_FILE);
+}

@@ -1,0 +1,142 @@
+// The model
+initialize()
+{
+	defineConstant("MUT", 5.0e-07);
+	//	defineConstant("D", 0.2);
+	defineConstant("GC_RATE", 1.0e-08);
+	defineConstant("L", 1e6);
+	defineConstant("N", 1000);
+	defineConstant("TRACT_LEN", 5000);
+	
+	initializeSLiMModelType("nonWF");
+	initializeMutationType("m1", 0.2, "g", -0.1, 0.2);
+	m1.convertToSubstitution = T;
+	initializeGenomicElementType("g1", m1, 1.0);
+	initializeGenomicElement(g1, 0, L-1);
+	initializeMutationRate(MUT);
+	initializeRecombinationRate(0);
+}
+
+function (integer)draw_tracts(float r, integer i_max, integer l) {
+	if (r==0.0) {
+		tracts = integer(0);
+		return tracts;
+	}
+	i = 0;
+	tracts = c();
+	while (i < i_max) {
+		d = rgeom(1, r);
+		i_start = i + d;
+		if (i_start > i_max) {
+			break;
+		}
+		l_instance = rgeom(1, 1/l);
+		// l_instance = rdunif(1, 95, 105);
+		// l_instance = 100;
+		i_end = i_start + l_instance;
+		if (i_end > i_max) {
+			break;
+		} else {
+			i = i_end;
+			tracts = c(tracts, i_start, i_end);
+		}
+	}
+	if (isNULL(tracts)) {
+		tracts = integer(0);
+	}
+	
+	return tracts;
+}
+
+function (logical)get_copying_directions(integer tracts) {
+	num_tracts = asInteger(length(tracts) / 2);
+	direction_vector = sample(c(T,F), size=num_tracts, replace=T);
+	direction_vector = repEach(direction_vector, count=2);
+	return direction_vector;
+}
+
+// Individuals produce offspring according to fitness
+reproduction()
+{
+	K = sim.getValue("N");
+	fitness = p1.cachedFitness(NULL);
+	inds = sample(p1.individuals, N, replace=T, weights=fitness);
+	inds2 = sample(p1.individuals, N, replace=T, weights=fitness);
+	
+	for (i in seqLen(K))
+	{
+		mode = sample(c('ASEX','SEX'), 1, weights=c(1, 0)); // Draw the reproductive mode of an individual according to the overall frequency of sex.
+		if (mode == 'ASEX')
+		{
+			ind = inds[i];
+			gen1 = ind.genome1;
+			gen2 = ind.genome2;
+			
+			tracts = draw_tracts(GC_RATE, L-1, TRACT_LEN);
+			direction_vector = get_copying_directions(tracts);
+			tracts1 = tracts[direction_vector];
+			//			catn(tracts1);
+			tracts2 = tracts[!direction_vector];
+			config = sample(c(1,2), size=1, replace=T);
+			if (config==1) {
+				subpop.addRecombinant(gen1, gen2, tracts1, gen2, gen1, tracts2);
+			} else if (config==2) {
+				subpop.addRecombinant(gen2, gen1, tracts2, gen1, gen2, tracts1);
+			}
+		}
+		else if (mode == 'SEX')
+		{
+			indA = inds[i];
+			indB = inds2[i];
+			gensA = sample(c(indA.genome1, indA.genome2), 2, replace=F);
+			gensB = sample(c(indB.genome1, indB.genome2), 2, replace=F);
+			tracts1 = draw_tracts(GC_RATE, L-1, TRACT_LEN);
+			tracts2 = draw_tracts(GC_RATE, L-1, TRACT_LEN);
+			gen1 = gensA[0];
+			gen2 = gensA[1];
+			gen3 = gensB[0];
+			gen4 = gensB[1];
+			subpop.addRecombinant(gen1, gen2, tracts1, gen3, gen4, tracts2);
+		}
+	
+	}
+	self.active = 0;
+}
+
+1 early()
+{
+	sim.setValue("N", N);
+	sim.addSubpop("p1", 1);
+}
+
+999 late() {
+	deleteFile("./test.txt");
+	homozygousProps = 0;
+	// for (mut in sim.mutations[sim.mutationCounts(NULL, sim.mutations)>3]) {
+	for (mut in sim.mutations) {
+		if (sum(p1.individuals.containsMutations(mut))>3) {
+			catn(sum(p1.individuals.containsMutations(mut)));
+			heterozygousCount = 0;
+			for (ind in sim.subpopulations.individuals) {
+				// catn(c(ind.genome1.containsMutations(mut), ind.genome2.containsMutations(mut)));
+				if (sum(c(ind.genome1.containsMutations(mut), ind.genome2.containsMutations(mut)))==1) {
+					heterozygousCount = heterozygousCount + 1;
+				}
+			}
+			homozygousProp = (N - heterozygousCount) / N;
+			homozygousProps = homozygousProps + homozygousProp;
+			writeFile("./test.txt", paste(c(mut.selectionCoeff, homozygousProp), sep="\t"), append=T);
+		}
+	}
+	catn(homozygousProps / length(sim.mutations));
+}
+
+survival()
+{
+	// survival is independent of fitness; parents die, offspring live
+	return (individual.age == 0);
+}
+
+1000 late() {
+	sim.simulationFinished();
+}

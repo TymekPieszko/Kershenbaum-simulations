@@ -1,3 +1,4 @@
 plots/
 **/sim_output/
 **/.snakemake
+*_test*

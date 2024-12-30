@@ -1,28 +1,29 @@
 import numpy as np
 configfile: "config.yaml"
 
-# OPTIONALLY module load Mamba/4.14.0-0
-# CLUSTER EXECUTION
+# module load Mamba/4.14.0-0
 # snakemake --executor slurm -j unlimited --default-resources slurm_account=zool-barralab slurm_partition=devel --use-conda --conda-frontend mamba --rerun-incomplete
 
-# Simulation params
+### Parameters
+# Population
 L = config['L']
 N = config['N']
-TRACT_LEN = config['TRACT_LEN']
+# Reproduction
+SEX_FREQ_lst = config['SEX_FREQ_lst']
+# Recombination
 GC_RATE_min = config['GC_RATE_min']
 GC_RATE_max = config['GC_RATE_max']
 GC_RATE_num = config['GC_RATE_num']
-GC_RATE_lst = [round(x,11) for x in np.logspace(GC_RATE_min, GC_RATE_max, num=GC_RATE_num)]
-# GC_RATE_lst.extend([1.0e-7, 1.0e-8, 1.0e-10])
-SEX_FREQ_lst = config['SEX_FREQ_lst']
-##############
+GC_RATE_lst = [round(x,11) for x in np.geomspace(GC_RATE_min, GC_RATE_max, num=GC_RATE_num)]
+TRACT_LEN = config['TRACT_LEN']
+# Mutation
 MUT_RATE = config['MUT_RATE']
 S_MEAN = config['S_MEAN']
 S_SHAPE = config['S_SHAPE']
-##############
+# Simulation
+GENS = config['GENS']
 REP_NUM = config['REP_NUM'] # one value
 REP_lst = list(range(int(REP_NUM))) # create a list
-GENS = config['GENS']
 
 simulate_targets = expand("sim_output/ts/SEX_FREQ~{SEX_FREQ}/GC_RATE~{GC_RATE}/{REP}.trees", SEX_FREQ=SEX_FREQ_lst, GC_RATE=GC_RATE_lst, REP=REP_lst)
 
@@ -42,11 +43,9 @@ rule simulate:
         L = L,
         N = N,
         TRACT_LEN = TRACT_LEN,
-        ##########
         MUT_RATE = MUT_RATE,
         S_MEAN = S_MEAN,
         S_SHAPE = S_SHAPE,
-        ##########
         GENS = GENS
     threads: 8
     resources:

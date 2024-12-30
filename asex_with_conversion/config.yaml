@@ -1,14 +1,18 @@
-# Scaling by Q=10
+### Scaling by Q = 10
+# Population
 L: 1000000 # 1 Mb 
-N: 1000 # 10000 / 10 
-TRACT_LEN: 5000
-GC_RATE_max: -6 # 1 tract per reproduction
-GC_RATE_min: -9 # 1 tract every 1000 reproductions
-GC_RATE_num: 12 # 12
-# SEX_FREQ_lst: [0.0, 0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0]
+N: 1000 # 10000 / Q
+# Reproduction
 SEX_FREQ_lst: [0.0]
+# Recombination
+GC_RATE_max: 1.0e-6 # 1.0e-7 * Q
+GC_RATE_min: 1.0e-9 # 1.0e-10 * Q
+GC_RATE_num: 12 # Number of rates, bounds included. 
+TRACT_LEN: 5000 # For example, gives a per-site LOH rate of 5.0e-3 if GC_RATE = 1.0e-6.
+# Mutation
+MUT_RATE: 5.0e-8 # 5.0e-9 * Q
+S_MEAN: -0.1 # -0.01 * Q
+S_SHAPE: 0.2
+# Simulation
 GENS: 50000
 REP_NUM: 100
-MUT_RATE: 5.0e-8 # 5.0e-9 * 10
-S_MEAN: -0.1 # -0.01 * 10
-S_SHAPE: 0.2

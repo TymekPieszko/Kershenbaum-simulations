@@ -1,4 +1,6 @@
 plots/
 **/sim_output/
 **/.snakemake
-*_test*
+./asex_with_conversion/cml_model_test.txt
+./asex_with_conversion/asex_with_conversion_muts.sh
+./asex_with_conversion/asex_with_conversion_muts_SLiMGui.slim

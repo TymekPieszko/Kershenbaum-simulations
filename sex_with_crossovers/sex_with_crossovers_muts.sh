@@ -13,12 +13,13 @@ module load Anaconda3/2021.11
 source activate slim
 
 DIR=/data/zool-barralab/scro4331/chapter1/Simon/simulation_sex
+### Scaling by Q = 10
 L=1000000 # 1 Mb 
-N=1000 # 10000 / 10 
+N=1000 # 10000 / Q
 TRACT_LEN=5000
-CO_RATE=1.0e-6
-MUT_RATE=5.0e-8 # 5.0e-9 * 10
-S_MEAN=-0.1 # -0.01 * 10
+CO_RATE=1.0e-6 # 1.0e-7 * Q
+MUT_RATE=5.0e-8 # 5.0e-9 * Q
+S_MEAN=-0.1 # -0.01 * Q
 S_SHAPE=0.2
 GENS=50000
 REP=$SLURM_ARRAY_TASK_ID

@@ -87,6 +87,7 @@ GENS late() {
 	// genome_sample.outputVCF(VCF_FILE);
 
 	// WRITE THE GENOTYPE FILE
+	// (!!) Note you finally performed the filtering + calculations in Python; keeping this part for future reference
 	deleteFile(GENOTYPE_FILE);
 	for (mut in sim.mutations) {
 		if (sum(p1.individuals.containsMutations(mut))>3) {
